@@ -1,5 +1,14 @@
 return {
   {
+    dir = vim.fn.stdpath("config") .. "/lua/colors",
+    name = "opencode",
+    lazy = false,
+    priority = 1000,
+    config = function()
+      require("colors.opencode").load()
+    end,
+  },
+  {
     "xiyaowong/transparent.nvim",
     config = function()
       require("transparent").setup({ -- Optional, you don't have to run setup.
@@ -39,7 +48,7 @@ return {
       require("transparent").clear_prefix("BufferLine")
       require("transparent").clear_prefix("NeoTree")
       require("transparent").clear_prefix("RenderMarkdown")
-      require("transparent").clear_prefix("lualine")
+      -- require("transparent").clear_prefix("lualine")
     end,
   },
 
