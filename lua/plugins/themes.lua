@@ -6,6 +6,33 @@ return {
     priority = 1000,
     config = function()
       require("colors.opencode").load()
+      -- TODO: current theme
+      vim.cmd.colorscheme("opencode")
+      -- vim.cmd.colorscheme("everforest")
+      -- vim.cmd.colorscheme("dracula-soft")
+      -- vim.cmd.colorscheme("catppuccin")
+
+      -- Brighten dim UI lines: default WinSeparator (#11111b) / LineNr (#45475a)
+      -- are near-invisible on the transparent near-black terminal bg
+      local overrides = {
+        WinSeparator = { fg = "#7f849c" }, -- overlay1
+        VertSplit = { fg = "#7f849c" },
+        LineNr = { fg = "#6c7086" }, -- overlay0
+        FoldColumn = { fg = "#6c7086" },
+        EndOfBuffer = { fg = "#45475a" },
+      }
+      for group, opts in pairs(overrides) do
+        vim.api.nvim_set_hl(0, group, opts)
+      end
+      -- Re-apply after any :colorscheme switch back to catppuccin
+      vim.api.nvim_create_autocmd("ColorScheme", {
+        pattern = "catppuccin",
+        callback = function()
+          for group, opts in pairs(overrides) do
+            vim.api.nvim_set_hl(0, group, opts)
+          end
+        end,
+      })
     end,
   },
   {
@@ -60,8 +87,7 @@ return {
       -- Optionally configure and load the colorscheme
       -- directly inside the plugin declaration.
       vim.g.everforest_enable_italic = true
-      -- TODO: current theme
-      vim.cmd.colorscheme("everforest")
+      -- vim.cmd.colorscheme("everforest")
     end,
   },
   {

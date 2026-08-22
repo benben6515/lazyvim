@@ -1,0 +1,1 @@
+require("colors.opencode").load()

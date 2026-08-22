@@ -1,3 +1,77 @@
+-- Taiwan time (UTC+8), independent of the machine's timezone
+local function tw_hour()
+  return os.date("!*t", os.time() + 8 * 3600).hour
+end
+
+-- stylua: ignore
+local greeting_pools = {
+  late_night = { -- 0-4
+    "It's the middle of the night. Even Neovim is idle.",
+    "Real lazy devs let the LSP do the night shift.",
+    "Still up? Your bed called. It misses you.",
+    "The quickest fix is sleep. Debug tomorrow.",
+  },
+  morning = { -- 5-10
+    "Morning. Let's coast through it, lazy style.",
+    "Good morning. Do less, but better.",
+    "Slow start is still a start. Hi.",
+    "Lazy morning, efficient afternoon. Maybe.",
+    "Coffee's brewing, plugins are lazy-loading.",
+  },
+  noon = { -- 11-13
+    "Lazy lunch first. The code can wait.",
+    "Nap now, merge later. It's noon.",
+    "Good noon. Delegate the boring parts.",
+    "Half-day of rest, half-day of genius.",
+  },
+  afternoon = { -- 14-17
+    "Good afternoon. Autocompletion exists for a reason.",
+    "Work smart, nap hard. Afternoon vibes.",
+    "Slow is smooth. Smooth is lazy.",
+    "Hydrate, delegate, autocomplete.",
+  },
+  evening = { -- 18-21
+    "Good evening. Let tomorrow's you handle it.",
+    "Wind down. Even lazy people ship things.",
+    "Evening: the golden hour of doing nothing.",
+    "Good evening. Save, commit, rest.",
+  },
+  night = { -- 22-23
+    "Almost midnight. Take it easy on yourself.",
+    "Bed > buffers. You know it's true.",
+    "Lazy rule #1: never debug past midnight.",
+    "One more line, then actually sleep. Promise.",
+  },
+}
+
+local function greeting(h)
+  math.randomseed() -- OS entropy; snacks re-seeds with os.time() on dashboard load
+  local pool = h < 5 and greeting_pools.late_night
+    or h < 11 and greeting_pools.morning
+    or h < 14 and greeting_pools.noon
+    or h < 18 and greeting_pools.afternoon
+    or h < 22 and greeting_pools.evening
+    or greeting_pools.night
+  return "[ " .. pool[math.random(#pool)] .. " ]"
+end
+
+local header_logo = (function()
+  local logo = [[
+       ██╗      █████╗ ███████╗██╗   ██╗██╗   ██╗██╗███╗   ███╗          Z
+       ██║     ██╔══██╗╚══███╔╝╚██╗ ██╔╝██║   ██║██║████╗ ████║      Z
+       ██║     ███████║  ███╔╝  ╚████╔╝ ██║   ██║██║██╔████╔██║   z
+       ██║     ██╔══██║ ███╔╝    ╚██╔╝  ╚██╗ ██╔╝██║██║╚██╔╝██║ z
+       ███████╗██║  ██║███████╗   ██║    ╚████╔╝ ██║██║ ╚═╝ ██║
+       ╚══════╝╚═╝  ╚═╝╚══════╝   ╚═╝     ╚═══╝  ╚═╝╚═╝     ╚═╝
+]]
+  local lines = vim.split(logo:gsub("^%s+", ""):gsub("\n%s+", "\n"):gsub("%s+$", ""), "\n", { plain = true })
+  local width = math.max(unpack(vim.tbl_map(vim.api.nvim_strwidth, lines)))
+  for i, line in ipairs(lines) do
+    lines[i] = line .. (" "):rep(width - vim.api.nvim_strwidth(line))
+  end
+  return table.concat(lines, "\n")
+end)()
+
 return {
   {
     "akinsho/bufferline.nvim",
@@ -78,6 +152,16 @@ return {
   },
   {
     "snacks.nvim",
+    init = function()
+      local set_greeting_hl = function()
+        vim.api.nvim_set_hl(0, "SnacksDashboardGreeting", { link = "String", default = true })
+      end
+      vim.api.nvim_create_autocmd("ColorScheme", {
+        group = vim.api.nvim_create_augroup("dashboard_greeting_hl", { clear = true }),
+        callback = set_greeting_hl,
+      })
+      set_greeting_hl()
+    end,
     opts = {
       indent = { enabled = true },
       input = { enabled = true },
@@ -87,19 +171,19 @@ return {
       statuscolumn = { enabled = false }, -- we set this in options.lua
       toggle = { map = LazyVim.safe_keymap_set },
       words = { enabled = true },
+      picker = {
+        sources = {
+          explorer = {
+            layout = { layout = { width = 32, min_width = 32 } },
+          },
+        },
+      },
       dashboard = {
         preset = {
           pick = function(cmd, opts)
             return LazyVim.pick(cmd, opts)()
           end,
-          header = [[
-       ██╗      █████╗ ███████╗██╗   ██╗██╗   ██╗██╗███╗   ███╗          Z
-       ██║     ██╔══██╗╚══███╔╝╚██╗ ██╔╝██║   ██║██║████╗ ████║      Z
-       ██║     ███████║  ███╔╝  ╚████╔╝ ██║   ██║██║██╔████╔██║   z
-       ██║     ██╔══██║ ███╔╝    ╚██╔╝  ╚██╗ ██╔╝██║██║╚██╔╝██║ z
-       ███████╗██║  ██║███████╗   ██║    ╚████╔╝ ██║██║ ╚═╝ ██║
-       ╚══════╝╚═╝  ╚═╝╚══════╝   ╚═╝     ╚═══╝  ╚═╝╚═╝     ╚═╝
-]],
+          header = header_logo,
        -- stylua: ignore
        ---@type snacks.dashboard.Item[]
        keys = {
@@ -112,7 +196,17 @@ return {
          { icon = " ", key = "x", desc = "Lazy Extras", action = ":LazyExtras" },
          { icon = "󰒲 ", key = "l", desc = "Lazy", action = ":Lazy" },
          { icon = " ", key = "q", desc = "Quit", action = ":qa" },
-       },
+        },
+         },
+        sections = {
+          { header = header_logo, padding = 1 }, -- padding 1 (default header section uses 2)
+          function()
+            return {
+              { text = { greeting(tw_hour()), hl = "SnacksDashboardGreeting" }, align = "center", padding = 1 },
+            }
+          end,
+          { section = "keys", gap = 1, padding = 1 },
+          { section = "startup" },
         },
       },
     },
