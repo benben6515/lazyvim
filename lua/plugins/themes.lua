@@ -5,11 +5,11 @@ return {
     lazy = false,
     priority = 1000,
     config = function()
-      require("colors.opencode").load()
+      require("colors.benben").load()
       -- TODO: current theme
-      vim.cmd.colorscheme("opencode")
+      -- vim.cmd.colorscheme("benben")
       -- vim.cmd.colorscheme("everforest")
-      -- vim.cmd.colorscheme("dracula-soft")
+      vim.cmd.colorscheme("dracula-soft")
       -- vim.cmd.colorscheme("catppuccin")
 
       -- Brighten dim UI lines: default WinSeparator (#11111b) / LineNr (#45475a)
@@ -20,13 +20,21 @@ return {
         LineNr = { fg = "#6c7086" }, -- overlay0
         FoldColumn = { fg = "#6c7086" },
         EndOfBuffer = { fg = "#45475a" },
+        -- SnacksPickerPathIgnored / GitStatusIgnored fall back to NonText;
+        -- dracula-soft's #3B4048 is near-invisible (~1.4:1) on the dark bg
+        NonText = { fg = "#6272a4" }, -- dracula comment
+        -- dracula pins hidden paths + ignored git icons to its comment color
+        -- (#70747f); two dim tiers under normal fg: hidden (#565f89) is one
+        -- step below ignored (#6272a4, same as NonText)
+        SnacksPickerPathHidden = { fg = "#565f89" },
+        SnacksPickerGitStatusIgnored = { fg = "#6272a4" },
       }
       for group, opts in pairs(overrides) do
         vim.api.nvim_set_hl(0, group, opts)
       end
-      -- Re-apply after any :colorscheme switch back to catppuccin
+      -- Re-apply after any :colorscheme switch back to these themes
       vim.api.nvim_create_autocmd("ColorScheme", {
-        pattern = "catppuccin",
+        pattern = { "catppuccin", "dracula-soft" },
         callback = function()
           for group, opts in pairs(overrides) do
             vim.api.nvim_set_hl(0, group, opts)
